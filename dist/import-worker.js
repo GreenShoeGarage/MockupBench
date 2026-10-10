@@ -1,0 +1,2 @@
+importScripts('./vendor/occt-import-js.js');
+self.onmessage=async event=>{try{const occt=await occtimportjs({locateFile:name=>new URL('./vendor/'+name,self.location.href).href});const result=occt.ReadStepFile(new Uint8Array(event.data.buffer),{linearUnit:'millimeter',linearDeflectionType:'absolute_value',linearDeflection:event.data.detail||.2,angularDeflection:.3});if(!result.success)throw Error('The STEP reader could not parse this file.');self.postMessage({result});}catch(e){self.postMessage({error:e.message||String(e)});}};

@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {parseHTML} from 'linkedom';
+import {freshProject,makePart} from '../dist/model.js';
+import {initTransformUI} from '../dist/transform-ui.js';
+const html=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
+test('transform preferences, live position readouts and active tools stay synchronized without changing the project',()=>{
+ const {document,window}=parseHTML(html);Object.assign(globalThis,{document,window});Object.defineProperty(window.HTMLSelectElement.prototype,'value',{configurable:true,get(){return [...this.options].find(o=>o.hasAttribute('selected'))?.value||this.options[0]?.value||'';},set(value){for(const o of this.options)o.value===String(value)?o.setAttribute('selected',''):o.removeAttribute('selected');}});const $=s=>document.querySelector(s),p=freshProject();p.parts=[makePart('block')];const before=JSON.stringify(p),prefs=new Map(),messages=[],calls=[],stage={tool:'translate',setTransformSettings:s=>calls.push(s)};let ui;const render=()=>$('#inspectorContent').innerHTML=ui.inspectorHTML(p.parts[0])+['pos','rot'].map(k=>[0,1,2].map(i=>`<input data-prop="${k}.${i}">`).join('')).join('');ui=initTransformUI({studio:()=>stage,project:()=>p,getPref:(k,f)=>prefs.get(k)||f,setPref:(k,v)=>prefs.set(k,v),notify:s=>messages.push(s),refresh:render});render();
+ const change=(key,value)=>{const el=$(`[data-transform-setting="${key}"]`);if(key==='magnet')el.checked=value;else el.value=value;el.dispatchEvent(new window.Event('change',{bubbles:true}));};change('space','local');change('step','1/8 in');change('angle','5');change('gap','-0.5 mm');change('magnet',false);assert.deepEqual(ui.settings(),{space:'local',step:3.175,angle:5,gap:-.5,magnet:false});assert.deepEqual(JSON.parse(prefs.get('transform-settings')),ui.settings());const good=ui.settings();change('angle','bad');assert.deepEqual(ui.settings(),good);assert.match(messages.at(-1),/Rotation step/);
+ ui.sync('rotate',true);assert.equal($('[data-tool=rotate]').getAttribute('aria-pressed'),'true');assert.equal($('[data-tool=translate]').getAttribute('aria-pressed'),'false');stage.tool='rotate';ui.preview(p.parts[0].id,[12,13,14],[0,45,0],[]);assert.match($('#transformReadout').textContent,/Y 45.0°/);assert.equal($('[data-prop="pos.0"]').value,'12');assert.equal($('#transformReadout').hidden,false);ui.preview(p.parts[0].id,[0,0,0],[0,0,0],[],true);assert.equal($('#transformReadout').hidden,true);assert.equal(JSON.stringify(p),before);
+});

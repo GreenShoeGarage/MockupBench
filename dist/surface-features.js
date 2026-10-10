@@ -1,0 +1,9 @@
+import {featureContours,faceFrame} from './geometry.js';
+export function replaceFeature(features,feature){const index=features.findIndex(f=>f.id===feature.id);return index<0?[...features,feature]:features.map((f,i)=>i===index?feature:f);}
+export const featureLabel=f=>f.type==='cutout'?(f.through?'Through cutout':'Pocket'):f.type==='emboss'?'Emboss · raised text':f.type==='deboss'?'Deboss · recessed text':'Decal';
+export function featureFaceSVG(part,feature,features=[]){const frame=faceFrame(part.dims,feature.face),[w,h]=frame.span,pad=Math.max(w,h)*.045,weight=Math.max(w,h)/420,path=loops=>loops.map(loop=>loop.map(([x,y],i)=>(i?'L':'M')+x+' '+y).join(' ')+' Z').join(' ');let marks='';
+ for(const f of [...features.filter(f=>f.id!==feature.id&&f.host===feature.host&&f.face===feature.face&&f.visible),feature]){const selected=f.id===feature.id,contours=featureContours(f.type==='decal'?{...f,shape:'rectangle'}:f);marks+=`<path d="${path(contours)}" fill="${selected?'#8dc8af':'#d9dfda'}" fill-rule="evenodd" stroke="${selected?'#125e43':'#86998d'}" stroke-width="${weight}"${f.type==='decal'?` stroke-dasharray="${weight*5} ${weight*3}"`:''}/>`;
+  if(selected&&f.type==='decal'&&/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(f.image))marks+=`<g transform="translate(${f.u},${f.v}) rotate(${f.angle}) scale(1,-1)"><image href="${f.image}" x="${-f.w/2}" y="${-f.h/2}" width="${f.w}" height="${f.h}" opacity="${f.opacity}"/></g>`;
+ }
+ return `<svg viewBox="${-w/2-pad} ${-h/2-pad} ${w+pad*2} ${h+pad*2}" role="img" aria-label="Face preview; edited feature highlighted"><g transform="scale(1,-1)"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" fill="#f5f8f5" stroke="#6a8072" stroke-width="${weight}"/>${marks}<path d="M${feature.u-5*weight} ${feature.v}h${10*weight}M${feature.u} ${feature.v-5*weight}v${10*weight}" fill="none" stroke="#125e43" stroke-width="${weight}"/></g></svg>`;
+}

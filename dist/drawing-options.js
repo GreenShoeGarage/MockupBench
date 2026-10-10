@@ -1,0 +1,6 @@
+export const DRAWING_PAPERS={tabloid:{name:'ANSI B / Tabloid · 17 × 11 in',w:431.8,h:279.4},a3:{name:'A3 · 420 × 297 mm',w:420,h:297},letter:{name:'Letter · 11 × 8.5 in',w:279.4,h:215.9},a4:{name:'A4 · 297 × 210 mm',w:297,h:210}};
+export const drawingDefaults=()=>({paper:'tabloid',units:'project',precision:2,scale:0,number:'MB-001',revision:'A',preparedBy:'',hiddenLines:true,includeHidden:true,partDetails:true,surfaceDetails:true,wiring:true});
+export function normalizeDrawingOptions(raw={}){
+ const o={...drawingDefaults(),...raw};if(!DRAWING_PAPERS[o.paper])throw Error('Choose a drawing paper size.');if(!['project','mm','in'].includes(o.units))throw Error('Choose millimeters or inches.');if(!Number.isInteger(o.precision)||o.precision<0||o.precision>4)throw Error('Dimension precision must be 0–4 decimal places.');if(![0,.1,.2,.25,.5,1,2,5].includes(o.scale))throw Error('Choose a supported drawing scale.');
+ for(const k of ['number','revision','preparedBy'])o[k]=String(o[k]??'').trim().slice(0,k==='revision'?24:80);o.number=o.number||'MB-001';o.revision=o.revision||'A';for(const k of ['hiddenLines','includeHidden','partDetails','surfaceDetails','wiring'])o[k]=o[k]!==false;return o;
+}

@@ -1,0 +1,13 @@
+{
+  "name": "mockupbench",
+  "version": "1.6.0-rc.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-loader ./tests/three-loader.mjs --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.4",
+    "linkedom": "0.18.12"
+  }
+}
